@@ -249,7 +249,9 @@ int ls_solver::pick_critical_move(__int128_t &best_value){
     //go through the forward and backward move of vars, evaluate their score, pick the untabued best one
     select_best_operation_from_vec(operation_idx,best_score,best_var_idx, best_value);
     //if there is untabu decreasing move
-    if(best_var_idx!=-1){return best_var_idx;}
+    if(best_var_idx!=-1){ 
+    std::cout << "Picked" << best_var_idx << "from regular \n";
+    return best_var_idx;}
     //choose from swap operations if there is no decreasing unsat critical
     if(!sat_clause_with_false_literal->empty()){
         operation_idx=0;
@@ -257,12 +259,15 @@ int ls_solver::pick_critical_move(__int128_t &best_value){
         //recover the false_lit
         false_lit_occur->clear();
         select_best_operation_from_vec(operation_idx,best_score,best_var_idx, best_value);
-        if(best_var_idx!=-1){return best_var_idx;}
+        if(best_var_idx!=-1){
+        std::cout << "Picked" << best_var_idx << "from swap \n";
+        return best_var_idx;}
     }
     //update weight and random walk
     if(mt()%10000>smooth_probability){update_clause_weight();}
     else {smooth_clause_weight();}
     random_walk();
+    std::cout << "RANDOM WALK\n";
     return -1;
 }
 //make move
@@ -674,6 +679,7 @@ bool ls_solver::local_search(){
             if(flipv!=-1){critical_move(flipv, change_value);}
             if(update_inner_best_solution()) no_improve_cnt_nia=0;
             else                               no_improve_cnt_nia++;
+            print_mv();
         }
         no_improve_cnt=(update_best_solution())?0:(no_improve_cnt+1);
     }

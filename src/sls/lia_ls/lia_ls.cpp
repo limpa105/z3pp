@@ -1818,6 +1818,7 @@ void ls_solver::enter_bool_mode(){
 
 //local search
 bool ls_solver::local_search(){
+    std::cout << "Satrting Local Search\n";
     for(variable v:_tmp_vars){if(v.low_bound>v.upper_bound){return false;}}//check the bound condition of vars
     int no_improve_cnt=0;
     int flipv;

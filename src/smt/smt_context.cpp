@@ -42,6 +42,7 @@ Revision History:
 #include "smt/smt_parallel.h"
 #include "smt/smt_arith_value.h"
 #define LS_DEBUG
+#include <iostream>
 
 namespace smt {
 
@@ -80,7 +81,6 @@ namespace smt {
         m_mk_bool_var_trail(*this),
         m_mk_enode_trail(*this),
         m_mk_lambda_trail(*this) {
-
         m_lia_ls_solver=new lia::ls_solver((int)m_fparams.m_random_seed,m_fparams.m_ls_time);
         m_nia_ls_solver=new nia::ls_solver((int)m_fparams.m_random_seed);
         SASSERT(m_scope_lvl == 0);
@@ -299,6 +299,7 @@ namespace smt {
     }
 
     bool context::bcp() {
+        std::cout << "Why are we doing this?\n";
         SASSERT(!inconsistent());
         while (m_qhead < m_assigned_literals.size()) {
             if (get_cancel_flag()) {
@@ -1294,6 +1295,7 @@ namespace smt {
        \remark The method assign_eq adds a new entry on this queue.
     */
     bool context::propagate_eqs() {
+        std::cout << "Propagating\n";
         unsigned i = 0;
         for (; i < m_eq_propagation_queue.size() && !get_cancel_flag(); i++) {
             new_eq & entry = m_eq_propagation_queue[i];
@@ -2570,6 +2572,7 @@ namespace smt {
        Return the number of deleted (already satisfied) clauses.
     */
     unsigned context::simplify_clauses(clause_vector & clauses, unsigned starting_at) {
+
         unsigned num_del_clauses = 0;
         clause_vector::iterator it  = clauses.begin();
         clause_vector::iterator end = clauses.end();
@@ -2647,7 +2650,7 @@ namespace smt {
        \brief Simplify the set of clauses if possible (solver is at base level).
     */
     void context::simplify_clauses() {
-        // Remark: when assumptions are used m_scope_lvl >= m_search_lvl > m_base_lvl. Therefore, no simplification is performed.
+;        // Remark: when assumptions are used m_scope_lvl >= m_search_lvl > m_base_lvl. Therefore, no simplification is performed.
         if (m_scope_lvl > m_base_lvl)
             return;
 
@@ -2712,7 +2715,7 @@ namespace smt {
        \brief Delete low activity lemmas
     */
     inline void context::del_inactive_lemmas() {
-        if (m_fparams.m_lemma_gc_strategy == LGC_NONE)
+       if (m_fparams.m_lemma_gc_strategy == LGC_NONE)
             return;
         else if (m_fparams.m_lemma_gc_half)
             del_inactive_lemmas1();
@@ -2728,6 +2731,7 @@ namespace smt {
        \brief Delete (approx.) half of low activity lemmas
     */
     void context::del_inactive_lemmas1() {
+
         unsigned sz            = m_lemmas.size();
         unsigned start_at      = m_base_lvl == 0 ? 0 : m_base_scopes[m_base_lvl - 1].m_lemmas_lim;
         SASSERT(start_at <= sz);
@@ -2787,6 +2791,7 @@ namespace smt {
        depends on which group the clauses is in.
     */
     void context::del_inactive_lemmas2() {
+
         IF_VERBOSE(2, verbose_stream() << "(smt.delete-inactive-clauses "; verbose_stream().flush(););
         unsigned sz            = m_lemmas.size();
         unsigned start_at      = m_base_lvl == 0 ? 0 : m_base_scopes[m_base_lvl - 1].m_lemmas_lim;
@@ -2833,6 +2838,7 @@ namespace smt {
        \brief Return true if "cls" has more than (or equal to) k unassigned literals.
     */
     bool context::more_than_k_unassigned_literals(clause * cls, unsigned k) {
+
         SASSERT(k > 0);
         for (literal l : *cls) {
             if (get_assignment(l) == l_undef) {
@@ -2937,7 +2943,7 @@ namespace smt {
     }
 
 
-    void context::push() {       
+    void context::push() {     
         pop_to_base_lvl();
         setup_context(false);
         bool was_consistent = !inconsistent();
@@ -2995,9 +3001,11 @@ namespace smt {
     }
 
     void context::assert_expr_core(expr * e, proof * pr) {
+        // THIS IS CALLED
+         //std::cout << e << "\n";
         if (get_cancel_flag()) return;
         SASSERT(is_well_sorted(m, e));
-        TRACE("begin_assert_expr", tout << mk_pp(e, m) << " " << mk_pp(pr, m) << "\n";);
+       //std::cout << "begin_assert_expr" << mk_pp(e, m) << " " << mk_pp(pr, m) << "\n";
         TRACE("begin_assert_expr_ll", tout << mk_ll_pp(e, m) << "\n";);
         pop_to_base_lvl();
         if (pr == nullptr)
@@ -3076,6 +3084,7 @@ namespace smt {
     }
 
     void context::undo_th_case_split(literal l) {
+
         m_all_th_case_split_literals.remove(l.index());
         if (m_literal2casesplitsets.contains(l.index())) {
             if (!m_literal2casesplitsets[l.index()].empty()) {
@@ -3131,6 +3140,7 @@ namespace smt {
     }
 
     void context::reduce_assertions() {
+
         if (!m_asserted_formulas.inconsistent()) {
             // SASSERT(at_base_level());
             m_asserted_formulas.reduce();
@@ -3138,6 +3148,7 @@ namespace smt {
     }
 
     static bool is_valid_assumption(ast_manager & m, expr * a) {
+
         expr* arg;
         if (!m.is_bool(a))
             return false;
@@ -3256,6 +3267,7 @@ namespace smt {
     }
 
     lbool context::decide_clause() {
+        
         if (m_tmp_clauses.empty()) return l_true;
         for (auto & tmp_clause : m_tmp_clauses) {
             literal_vector& lits = tmp_clause.second;
@@ -3293,6 +3305,7 @@ namespace smt {
     }
 
     void context::init_assumptions(expr_ref_vector const& asms) {
+        std::cout << "Init\n";
         reset_assumptions();
         m_literal2assumption.reset();
         m_unsat_core.reset();
@@ -3511,7 +3524,7 @@ namespace smt {
        \remark A logical context can only be configured at scope level 0,
        and before internalizing any formulas.
     */
-   static bool first_into_cxt=true;//only in 2nd round will the LS be called
+   static bool first_into_cxt=false;//only in 2nd round will the LS be called
     lbool context::setup_and_check(bool reset_cancel) {
         if (!check_preamble(reset_cancel)) return l_undef;
         SASSERT(m_scope_lvl == 0);
@@ -3546,14 +3559,15 @@ namespace smt {
             bool is_IDL=(logic_name=="QF_IDL");
             bool is_LIA=(logic_name=="QF_LIA");
             if(is_NIA){
-                if(first_into_cxt){
+                if(false){
                     first_into_cxt=false;
                     return check_finalize(search());
                 }
                 else{
                     expr_bool_var_map(m_nia_ls_solver);
                     m_nia_ls_solver->build_instance(clauses_vec);
-                    if(m_nia_ls_solver->has_high_coff){return check_finalize(l_undef);}
+                    //if(m_nia_ls_solver->has_high_coff){return check_finalize(l_undef);}
+                    std::cout<< "STARTING LOCAL SEARCH";
                     m_nia_ls_solver->local_search();
                     if(m_nia_ls_solver->best_found_cost==0){
                         try{
@@ -3568,7 +3582,8 @@ namespace smt {
             }//NIA case
             else if(is_LIA)
             {
-                if(!m_fparams.m_use_ls){
+                std::cout << "Starting Local search\n";
+                if(false){
                     return check_finalize(search());
                 }
                 else{
@@ -3588,7 +3603,7 @@ namespace smt {
             }//LIA case
             else if(is_IDL)
             {
-                if(first_into_cxt){
+                if(false){
                     first_into_cxt=false;
                     return check_finalize(search());
                 }
